@@ -53,7 +53,7 @@ func checkDockerfiles(bm *benchmarker.DockerBenchmarker, dfs []string) {
 		err := bm.ParseDockerfile(df)
 
 		if err != nil {
-			log.Error(err)
+			log.Errorf("file: %s, error: %s", df, err)
 			continue
 		}
 	}
@@ -79,8 +79,18 @@ func getDockerfiles(dir, pattern string) []string {
 			if err != nil {
 				return err
 			}
-			if !info.IsDir() && strings.Contains(strings.ToLower(filepath.Base(path)), pattern) {
-				dfs = append(dfs, path)
+
+			if !info.IsDir() &&
+				filepath.Ext(path) == "" &&
+				strings.Contains(strings.ToLower(filepath.Base(path)), pattern) {
+				stat, _ := os.Stat(path)
+
+				perm := stat.Mode().Perm()
+
+				// ignore executable file
+				if !strings.Contains(fmt.Sprintf("%s", perm), "x") {
+					dfs = append(dfs, path)
+				}
 			}
 			return nil
 		})

@@ -7,5 +7,7 @@ RUN env GO111MODULE=on GOOS=$(uname -s | tr '[:upper:]' '[:lower:]') GOARCH=amd6
 FROM alpine
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 COPY --from=builder /go/src/dockerfile-benchmarker/dockerfile-benchmarker /dockerfile-benchmarker
+HEALTHCHECK CMD ps -el
+USER benchmarker
 
 ENTRYPOINT ["/dockerfile-benchmarker"]
