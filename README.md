@@ -21,8 +21,8 @@ Usage:
   dockerfile-benchmarker [flags]
 
 Flags:
-  -d, --directory string   directory to lookup for dockerfile (default: ./) (default "./")
+  -d, --directory string   directory to lookup for dockerfile (default: ./)
   -h, --help               help for dockerfile-benchmarker
       --level string       Log level (default "info")
-  -p, --pattern string     dockerfile name pattern (default: dockerfile) (default "dockerfile")
+  -p, --pattern string     dockerfile name pattern (default: dockerfile)
   ```
