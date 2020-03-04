@@ -43,8 +43,8 @@ func main() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&logLevel, "level", "info", "Log level")
-	rootCmd.Flags().StringVarP(&dir, "directory", "d", "./", "directory to lookup for dockerfile (default: ./)")
-	rootCmd.Flags().StringVarP(&pattern, "pattern", "p", "dockerfile", "dockerfile name pattern (default: dockerfile)")
+	rootCmd.Flags().StringVarP(&dir, "directory", "d", "./", "directory to lookup for dockerfile")
+	rootCmd.Flags().StringVarP(&pattern, "pattern", "p", "dockerfile", "dockerfile name pattern")
 	rootCmd.Execute()
 }
 
