@@ -1,0 +1,12 @@
+FROM golang:1.10-alpine AS builder
+RUN apk update
+RUN apk add --no-cache build-base bash git
+COPY . /go/src/github.com/kaizhe/echo
+WORKDIR /go/src/github.com/kaizhe/echo
+RUN make all
+
+FROM alpine
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+ADD --from=builder /go/src/github.com/kaizhe/echo/echo /echo
+USER 0:0
+ENTRYPOINT ["/echo"]
