@@ -16,7 +16,7 @@ Run CIS Docker Benchmark rules for dockerfiles. The following CIS rules are appl
 
 ## Usage
 ```
-./dockerfile-benchmarker -h
+$ ./dockerfile-benchmarker -h
 dockerfile-benchmarker runs CIS Docker Benchmark for dockerfiles. Rule applicable are 4.1, 4.2, 4.3, 4.6. 4.7, 4.9 and 4.10.
 
 Usage:
