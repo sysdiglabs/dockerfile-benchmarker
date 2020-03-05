@@ -5,15 +5,20 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sysdiglabs/dockerfile-benchmarker/utils"
+
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 )
 
 const (
-	Healthcheck = "healthcheck"
-	User        = "user"
+	HEALTHCHECK = "healthcheck"
+	USER        = "user"
 	Root        = "root"
-	Add         = "add"
+	ADD         = "add"
 	Run         = "run"
+	FROM        = "from"
+	ENV         = "env"
+	LABEL       = "label"
 )
 
 // DockerInstruction example:
@@ -98,13 +103,15 @@ func (df *Dockerfile) LookupInstructionAndContent(inst, cont string) []int {
 	re, err := regexp.Compile(c)
 
 	if err != nil {
+		fmt.Printf(c)
+		fmt.Println(err)
 		return []int{}
 	}
 
 	for idx, di := range df.Instructions {
 		if di.Instruction == i {
 			for _, content := range di.Content {
-				if re.MatchString(content) {
+				if re.MatchString(strings.ToLower(content)) {
 					indexList = append(indexList, idx)
 				}
 			}
@@ -112,4 +119,18 @@ func (df *Dockerfile) LookupInstructionAndContent(inst, cont string) []int {
 	}
 
 	return indexList
+}
+
+func (df *Dockerfile) GetBaseImages() []string {
+	imageMap := map[string]bool{}
+
+	for _, di := range df.Instructions {
+		if di.Instruction == FROM {
+			if len(di.Content) > 0 {
+				imageMap[di.Content[0]] = true
+			}
+		}
+	}
+
+	return utils.MapToArray(imageMap)
 }

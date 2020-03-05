@@ -8,6 +8,13 @@ var (
 	bm = NewDockerBenchmarker()
 )
 
+func init() {
+	bm.SetTrustedBaseImages([]string{"golang:1.12-alpine", "alpine"})
+	bm.SetDisallowedPackages([]string{"netcat"})
+	bm.SetSecretPattern([]string{"key", "secret"})
+	bm.debugMode = true
+}
+
 func TestPassedDockerfile(t *testing.T) {
 	err := bm.ParseDockerfile("../test/Dockerfile_pass")
 

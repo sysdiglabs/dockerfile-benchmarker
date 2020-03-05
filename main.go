@@ -23,11 +23,14 @@ func main() {
 	var logLevel string
 	var dir string
 	var pattern string
+	var trustedBaseImages string
+	var disallowedPackages string
+	var secretPatterns string
 
 	var rootCmd = &cobra.Command{
 		Use:   "dockerfile-benchmarker",
 		Short: "dockerfile-benchmarker runs CIS Docker Benchmark for dockerfiles",
-		Long:  "dockerfile-benchmarker runs CIS Docker Benchmark for dockerfiles. Rule applicable are 4.1, 4.6. 4.7 and 4.9.",
+		Long:  "dockerfile-benchmarker runs CIS Docker Benchmark for dockerfiles. Rule applicable are 4.1, 4.2, 4.3, 4.6. 4.7, 4.9 and 4.10.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			lvl, err := log.ParseLevel(logLevel)
 			if err != nil {
@@ -38,13 +41,31 @@ func main() {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			dfs := getDockerfiles(dir, pattern)
+
+			log.Println("Trusted base images:", parseList(trustedBaseImages))
+			log.Println("Disallowed packages:", parseList(disallowedPackages))
+			log.Println("Secret patterns:", parseList(secretPatterns))
+
+			bm.SetTrustedBaseImages(parseList(trustedBaseImages))
+			bm.SetDisallowedPackages(parseList(disallowedPackages))
+			bm.SetSecretPattern(parseList(secretPatterns))
+
 			checkDockerfiles(bm, dfs)
 		},
 	}
 
 	rootCmd.PersistentFlags().StringVar(&logLevel, "level", "info", "Log level")
+
+	rootCmd.Flags().StringVarP(&trustedBaseImages, "trusted-base-images", "b", "", "list of trusted base images separated by comma")
+
+	rootCmd.Flags().StringVarP(&disallowedPackages, "disallowed-packages", "p", "", "list of disallowed packages separated by comma")
+
+	rootCmd.Flags().StringVarP(&secretPatterns, "secret-patterns", "s", "", "list of secret patterns separated by comma")
+
 	rootCmd.Flags().StringVarP(&dir, "directory", "d", "./", "directory to lookup for dockerfile")
-	rootCmd.Flags().StringVarP(&pattern, "pattern", "p", "dockerfile", "dockerfile name pattern")
+
+	rootCmd.Flags().StringVarP(&pattern, "dockerfile-pattern", "f", "dockerfile", "dockerfile name pattern")
+
 	rootCmd.Execute()
 }
 
@@ -99,4 +120,17 @@ func getDockerfiles(dir, pattern string) []string {
 	}
 
 	return dfs
+}
+
+func parseList(input string) []string {
+	arr := []string{}
+	list := strings.Split(input, ",")
+
+	for _, item := range list {
+		if item != "" {
+			arr = append(arr, strings.TrimSpace(item))
+		}
+	}
+
+	return arr
 }

@@ -6,7 +6,10 @@ WORKDIR /go/src/github.com/kaizhe/echo
 RUN make all
 
 FROM alpine
-RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+RUN apk update && apk add ca-certificates netcat && rm -rf /var/cache/apk/*
 ADD --from=builder /go/src/github.com/kaizhe/echo/echo /echo
+LABEL multi.label1="value1" multi.label2="value2" other="value3"
+ENV AWS_ACCESS_KEY_ID xxx
+ENV AWS_SECRET_ACCESS_KEY=yyy
 USER 0:0
 ENTRYPOINT ["/echo"]

@@ -1,8 +1,11 @@
 package benchmarker
 
 import (
+	"fmt"
 	"os"
 	"strings"
+
+	"github.com/sysdiglabs/dockerfile-benchmarker/utils"
 
 	"github.com/sysdiglabs/dockerfile-benchmarker/pkg/benchmark"
 	"github.com/sysdiglabs/dockerfile-benchmarker/pkg/dockerfile"
@@ -11,15 +14,59 @@ import (
 )
 
 type DockerBenchmarker struct {
-	dfiles          map[string]*dockerfile.Dockerfile
-	violationReport *benchmark.ViolationReport
+	dfiles             map[string]*dockerfile.Dockerfile
+	violationReport    *benchmark.ViolationReport
+	trustedBaseImages  map[string]bool
+	disallowedPackages map[string]bool
+	secretPatterns     map[string]bool
+	debugMode          bool
 }
 
 // NewDockerBenchmarker returns a bm object
 func NewDockerBenchmarker() *DockerBenchmarker {
 	return &DockerBenchmarker{
-		dfiles:          map[string]*dockerfile.Dockerfile{},
-		violationReport: benchmark.NewBenchmarkViolationReport(),
+		dfiles:             map[string]*dockerfile.Dockerfile{},
+		violationReport:    benchmark.NewBenchmarkViolationReport(),
+		trustedBaseImages:  nil,
+		disallowedPackages: nil,
+		secretPatterns:     nil,
+		debugMode:          false,
+	}
+}
+
+func (bm *DockerBenchmarker) SetTrustedBaseImages(images []string) {
+	if len(images) == 0 {
+		return
+	}
+
+	bm.trustedBaseImages = map[string]bool{}
+
+	for _, image := range images {
+		bm.trustedBaseImages[image] = true
+	}
+}
+
+func (bm *DockerBenchmarker) SetDisallowedPackages(packages []string) {
+	if len(packages) == 0 {
+		return
+	}
+
+	bm.disallowedPackages = map[string]bool{}
+
+	for _, pkg := range packages {
+		bm.disallowedPackages[pkg] = true
+	}
+}
+
+func (bm *DockerBenchmarker) SetSecretPattern(patterns []string) {
+	if len(patterns) == 0 {
+		return
+	}
+
+	bm.secretPatterns = map[string]bool{}
+
+	for _, pattern := range patterns {
+		bm.secretPatterns[pattern] = true
 	}
 }
 
@@ -35,6 +82,10 @@ func (bm *DockerBenchmarker) ParseDockerfile(file string) error {
 
 	if err != nil {
 		return err
+	}
+
+	if bm.debugMode {
+		fmt.Println(result.AST.Dump())
 	}
 
 	if _, exists := bm.dfiles[file]; !exists {
@@ -59,7 +110,13 @@ func (bm *DockerBenchmarker) RunBenchmark() {
 	// CIS 4.1 Create a user for the container
 	bm.CheckNonRootUser()
 
-	// CIS 4.6 Add HEALTHCHECK instruction to the container image
+	// CIS 4.2 Use trusted base images for containers
+	bm.CheckTrustedBaseImages()
+
+	// CIS 4.3 Do not install unnecessary packages in the container
+	bm.CheckDisallowedPackages()
+
+	// CIS 4.6 add HEALTHCHECK instruction to the container image
 	bm.CheckHealthCheck()
 
 	// CIS 4.7 Do not use update instructions alone in the Dockerfile
@@ -67,16 +124,19 @@ func (bm *DockerBenchmarker) RunBenchmark() {
 
 	// CIS 4.9 Use COPY instead of ADD in Dockerfile
 	bm.CheckAdd()
+
+	// CIS 4.10 Do not store secrets in Dockerfiles
+	bm.CheckSecretsInsideImage()
 }
 
 // CIS 4.1 Create a user for the container
-func (bm *DockerBenchmarker) CheckNonRootUser() []string {
+func (bm *DockerBenchmarker) CheckNonRootUser() {
 	dfiles := []string{}
 
 	for file, df := range bm.dfiles {
 		nonRootUserCreated := false
 		for _, di := range df.Instructions {
-			if di.Instruction == dockerfile.User {
+			if di.Instruction == dockerfile.USER {
 				if len(di.Content) > 0 {
 					content := strings.ToLower(di.Content[0])
 					if strings.Contains(content, ":") {
@@ -101,16 +161,70 @@ func (bm *DockerBenchmarker) CheckNonRootUser() []string {
 	}
 
 	bm.violationReport.AddViolation(benchmark.CIS_4_1, dfiles)
-
-	return dfiles
 }
 
-// CIS 4.6 Add HEALTHCHECK instruction to the container image
+// CIS 4.2 Use trusted base images for containers
+func (bm *DockerBenchmarker) CheckTrustedBaseImages() {
+	// no trusted base images are provided
+	if bm.trustedBaseImages == nil {
+		return
+	}
+
+	dfileMap := map[string]bool{}
+
+	for file, df := range bm.dfiles {
+		baseImages := df.GetBaseImages()
+
+		for _, image := range baseImages {
+			if !bm.IsTrustedBaseImage(image) {
+				dfileMap[file] = true
+			}
+		}
+	}
+
+	bm.violationReport.AddViolation(benchmark.CIS_4_2, utils.MapToArray(dfileMap))
+}
+
+// CIS 4.3 Do not install unnecessary packages in the container
+func (bm *DockerBenchmarker) CheckDisallowedPackages() {
+	// no disallowed packages are provided
+	if bm.disallowedPackages == nil {
+		return
+	}
+
+	dfileMap := map[string]bool{}
+
+	for file, df := range bm.dfiles {
+		for disallowedPkg := range bm.disallowedPackages {
+			// apt
+			idxs := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+install\s+[^;|&]+`+disallowedPkg)
+			if len(idxs) > 0 {
+				dfileMap[file] = true
+			}
+
+			// apt-get
+			idxs = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+install\s+[^;|&]+`+disallowedPkg)
+			if len(idxs) > 0 {
+				dfileMap[file] = true
+			}
+
+			// apk
+			idxs = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+add\s+[^;|&]+`+disallowedPkg)
+			if len(idxs) > 0 {
+				dfileMap[file] = true
+			}
+		}
+	}
+
+	bm.violationReport.AddViolation(benchmark.CIS_4_3, utils.MapToArray(dfileMap))
+}
+
+// CIS 4.6 add HEALTHCHECK instruction to the container image
 func (bm *DockerBenchmarker) CheckHealthCheck() {
 	dfiles := []string{}
 
 	for file, df := range bm.dfiles {
-		found := df.LookupInstruction(dockerfile.Healthcheck)
+		found := df.LookupInstruction(dockerfile.HEALTHCHECK)
 
 		if !found {
 			dfiles = append(dfiles, file)
@@ -157,12 +271,25 @@ func (bm *DockerBenchmarker) CheckRunUpdateOnly() {
 	bm.violationReport.AddViolation(benchmark.CIS_4_7, dfiles)
 }
 
+func (bm *DockerBenchmarker) IsTrustedBaseImage(image string) bool {
+	// always return true if there is no trusted base image provided
+	if bm.trustedBaseImages == nil {
+		return true
+	}
+
+	if _, exists := bm.trustedBaseImages[image]; exists {
+		return true
+	}
+
+	return false
+}
+
 // CIS 4.9 Use COPY instead of ADD in Dockerfile
 func (bm *DockerBenchmarker) CheckAdd() {
 	dfiles := []string{}
 
 	for file, df := range bm.dfiles {
-		found := df.LookupInstruction(dockerfile.Add)
+		found := df.LookupInstruction(dockerfile.ADD)
 
 		if found {
 			dfiles = append(dfiles, file)
@@ -170,6 +297,33 @@ func (bm *DockerBenchmarker) CheckAdd() {
 	}
 
 	bm.violationReport.AddViolation(benchmark.CIS_4_9, dfiles)
+}
+
+// CIS 4.10 Do not store secrets in Dockerfiles (check label and env instructions only)
+func (bm *DockerBenchmarker) CheckSecretsInsideImage() {
+	if bm.secretPatterns == nil {
+		return
+	}
+
+	dfileMap := map[string]bool{}
+
+	for file, df := range bm.dfiles {
+		for secretPattern := range bm.secretPatterns {
+			// ENV
+			idxs := df.LookupInstructionAndContent(dockerfile.ENV, secretPattern)
+			if len(idxs) > 0 {
+				dfileMap[file] = true
+			}
+
+			// LABEL
+			idxs = df.LookupInstructionAndContent(dockerfile.LABEL, secretPattern)
+			if len(idxs) > 0 {
+				dfileMap[file] = true
+			}
+		}
+	}
+
+	bm.violationReport.AddViolation(benchmark.CIS_4_10, utils.MapToArray(dfileMap))
 }
 
 func diffArray(arr1, arr2 []int) (arr3, arr4 []int) {
