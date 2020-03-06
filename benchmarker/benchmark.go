@@ -316,14 +316,14 @@ func (bm *DockerBenchmarker) CheckSecretsInsideImage() {
 			// ENV
 			idxs := df.LookupInstructionAndContent(dockerfile.ENV, secretPattern)
 			if len(idxs) > 0 {
-				violation := createViolation(file, fmt.Sprintf("ENV contains %s", secretPattern))
+				violation := createViolation(file, fmt.Sprintf("ENV contains '%s'", secretPattern))
 				violationMap[violation] = true
 			}
 
 			// LABEL
 			idxs = df.LookupInstructionAndContent(dockerfile.LABEL, secretPattern)
 			if len(idxs) > 0 {
-				violation := createViolation(file, fmt.Sprintf("LABEL contains %s", secretPattern))
+				violation := createViolation(file, fmt.Sprintf("LABEL contains '%s'", secretPattern))
 				violationMap[violation] = true
 			}
 		}
