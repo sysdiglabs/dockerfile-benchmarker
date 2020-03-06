@@ -28,8 +28,8 @@ func TestPassedDockerfile(t *testing.T) {
 	report := bm.GetViolationReport()
 
 	for _, v := range report.Violations {
-		if len(v.Files) > 0 {
-			t.Errorf("rule '%s' failed: %s", v.Rule, v.Files)
+		if len(v.Violations) > 0 {
+			t.Errorf("rule '%s' failed: %s", v.Rule, v.Violations)
 		}
 	}
 }
@@ -47,8 +47,8 @@ func TestFailedDockerfile(t *testing.T) {
 	report := bm.GetViolationReport()
 
 	for _, v := range report.Violations {
-		if len(v.Files) == 0 {
-			t.Errorf("rule '%s' failed: %s", v.Rule, v.Files)
+		if len(v.Violations) == 0 {
+			t.Errorf("rule '%s' failed: %s", v.Rule, v.Violations)
 		}
 	}
 }

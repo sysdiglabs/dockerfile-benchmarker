@@ -39,6 +39,10 @@ func InitDockerInstruction() *DockerInstruction {
 	}
 }
 
+func (di *DockerInstruction) String() string {
+	return fmt.Sprintf("%s %s %s", di.Instruction, di.Flags, di.Content)
+}
+
 type Dockerfile struct {
 	File         string
 	Instructions []*DockerInstruction

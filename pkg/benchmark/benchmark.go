@@ -11,24 +11,24 @@ const (
 )
 
 type ViolationReport struct {
-	Violations []Violation `json:"benchmark_violation_report"`
+	Violations []RuleViolation `json:"cis_docker_benchmark_violation_report"`
 }
 
-type Violation struct {
-	Rule  string   `json:"cis_rule"`
-	Files []string `json:"files"`
+type RuleViolation struct {
+	Rule       string   `json:"rule"`
+	Violations []string `json:"violations"`
 }
 
-func NewBenchmarkViolation(rule string, files []string) Violation {
-	return Violation{
-		Rule:  rule,
-		Files: files,
+func NewBenchmarkViolation(rule string, violations []string) RuleViolation {
+	return RuleViolation{
+		Rule:       rule,
+		Violations: violations,
 	}
 }
 
 func NewBenchmarkViolationReport() *ViolationReport {
 	return &ViolationReport{
-		Violations: []Violation{},
+		Violations: []RuleViolation{},
 	}
 }
 

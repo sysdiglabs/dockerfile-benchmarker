@@ -170,19 +170,20 @@ func (bm *DockerBenchmarker) CheckTrustedBaseImages() {
 		return
 	}
 
-	dfileMap := map[string]bool{}
+	violationMap := map[string]bool{}
 
 	for file, df := range bm.dfiles {
 		baseImages := df.GetBaseImages()
 
 		for _, image := range baseImages {
 			if !bm.IsTrustedBaseImage(image) {
-				dfileMap[file] = true
+				violation := createViolation(file, image)
+				violationMap[violation] = true
 			}
 		}
 	}
 
-	bm.violationReport.AddViolation(benchmark.CIS_4_2, utils.MapToArray(dfileMap))
+	bm.violationReport.AddViolation(benchmark.CIS_4_2, utils.MapToArray(violationMap))
 }
 
 // CIS 4.3 Do not install unnecessary packages in the container
@@ -192,31 +193,34 @@ func (bm *DockerBenchmarker) CheckDisallowedPackages() {
 		return
 	}
 
-	dfileMap := map[string]bool{}
+	violationMap := map[string]bool{}
 
 	for file, df := range bm.dfiles {
 		for disallowedPkg := range bm.disallowedPackages {
 			// apt
 			idxs := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+install\s+[^;|&]+`+disallowedPkg)
 			if len(idxs) > 0 {
-				dfileMap[file] = true
+				violation := createViolation(file, disallowedPkg)
+				violationMap[violation] = true
 			}
 
 			// apt-get
 			idxs = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+install\s+[^;|&]+`+disallowedPkg)
 			if len(idxs) > 0 {
-				dfileMap[file] = true
+				violation := createViolation(file, disallowedPkg)
+				violationMap[violation] = true
 			}
 
 			// apk
 			idxs = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+add\s+[^;|&]+`+disallowedPkg)
 			if len(idxs) > 0 {
-				dfileMap[file] = true
+				violation := createViolation(file, disallowedPkg)
+				violationMap[violation] = true
 			}
 		}
 	}
 
-	bm.violationReport.AddViolation(benchmark.CIS_4_3, utils.MapToArray(dfileMap))
+	bm.violationReport.AddViolation(benchmark.CIS_4_3, utils.MapToArray(violationMap))
 }
 
 // CIS 4.6 add HEALTHCHECK instruction to the container image
@@ -305,25 +309,27 @@ func (bm *DockerBenchmarker) CheckSecretsInsideImage() {
 		return
 	}
 
-	dfileMap := map[string]bool{}
+	violationMap := map[string]bool{}
 
 	for file, df := range bm.dfiles {
 		for secretPattern := range bm.secretPatterns {
 			// ENV
 			idxs := df.LookupInstructionAndContent(dockerfile.ENV, secretPattern)
 			if len(idxs) > 0 {
-				dfileMap[file] = true
+				violation := createViolation(file, fmt.Sprintf("ENV contains %s", secretPattern))
+				violationMap[violation] = true
 			}
 
 			// LABEL
 			idxs = df.LookupInstructionAndContent(dockerfile.LABEL, secretPattern)
 			if len(idxs) > 0 {
-				dfileMap[file] = true
+				violation := createViolation(file, fmt.Sprintf("LABEL contains %s", secretPattern))
+				violationMap[violation] = true
 			}
 		}
 	}
 
-	bm.violationReport.AddViolation(benchmark.CIS_4_10, utils.MapToArray(dfileMap))
+	bm.violationReport.AddViolation(benchmark.CIS_4_10, utils.MapToArray(violationMap))
 }
 
 func diffArray(arr1, arr2 []int) (arr3, arr4 []int) {
@@ -351,4 +357,8 @@ func diffArray(arr1, arr2 []int) (arr3, arr4 []int) {
 	}
 
 	return
+}
+
+func createViolation(dockerfile, detail string) string {
+	return fmt.Sprintf("%s: %s", dockerfile, detail)
 }
