@@ -35,52 +35,53 @@ Flags:
 ## Example output
 ```
 $ ./dockerfile-benchmarker -p "netcat" -s "secret, key" -b "alpine,golang:1.12-alpine" | jq .
-INFO[2020-03-05T15:52:50-08:00] Trusted base images: [alpine golang:1.12-alpine] 
-INFO[2020-03-05T15:52:50-08:00] Disallowed packages: [netcat]                
-INFO[2020-03-05T15:52:50-08:00] Secret patterns: [secret key]                
+INFO[2020-03-05T16:19:28-08:00] Trusted base images: [alpine golang:1.12-alpine] 
+INFO[2020-03-05T16:19:28-08:00] Disallowed packages: [netcat]                
+INFO[2020-03-05T16:19:28-08:00] Secret patterns: [secret key]                
 {
-  "benchmark_violation_report": [
+  "cis_docker_benchmark_violation_report": [
     {
-      "cis_rule": "CIS 4.1 Create a user for the container",
-      "files": [
+      "rule": "CIS 4.1 Create a user for the container",
+      "violations": [
         "test/Dockerfile_fail"
       ]
     },
     {
-      "cis_rule": "CIS 4.2 Use trusted base images for containers",
-      "files": [
-        "container/Dockerfile",
+      "rule": "CIS 4.2 Use trusted base images for containers",
+      "violations": [
+        "test/Dockerfile_fail: golang:1.10-alpine",
+        "container/Dockerfile: golang:1.12.9-alpine3.10"
+      ]
+    },
+    {
+      "rule": "CIS 4.3 Do not install unnecessary packages in the container",
+      "violations": [
+        "test/Dockerfile_fail: netcat"
+      ]
+    },
+    {
+      "rule": "CIS 4.6 Add HEALTHCHECK instruction to the container image",
+      "violations": [
         "test/Dockerfile_fail"
       ]
     },
     {
-      "cis_rule": "CIS 4.3 Do not install unnecessary packages in the container",
-      "files": [
+      "rule": "CIS 4.7 Do not use update instructions alone in the Dockerfile",
+      "violations": [
         "test/Dockerfile_fail"
       ]
     },
     {
-      "cis_rule": "CIS 4.6 Add HEALTHCHECK instruction to the container image",
-      "files": [
+      "rule": "CIS 4.9 Use COPY instead of ADD in Dockerfile",
+      "violations": [
         "test/Dockerfile_fail"
       ]
     },
     {
-      "cis_rule": "CIS 4.7 Do not use update instructions alone in the Dockerfile",
-      "files": [
-        "test/Dockerfile_fail"
-      ]
-    },
-    {
-      "cis_rule": "CIS 4.9 Use COPY instead of ADD in Dockerfile",
-      "files": [
-        "test/Dockerfile_fail"
-      ]
-    },
-    {
-      "cis_rule": "CIS 4.10 Do not store secrets in Dockerfiles",
-      "files": [
-        "test/Dockerfile_fail"
+      "rule": "CIS 4.10 Do not store secrets in Dockerfiles",
+      "violations": [
+        "test/Dockerfile_fail: ENV contains 'secret'",
+        "test/Dockerfile_fail: ENV contains 'key'"
       ]
     }
   ]
