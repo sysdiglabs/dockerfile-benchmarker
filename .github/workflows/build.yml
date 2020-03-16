@@ -26,13 +26,10 @@ jobs:
           path: master
 
     - name: Sysdig CIS Dockerfile Benchmark
-      uses: sysdiglabs/benchmark-dockerfile@v1.0.1
+      uses: sysdiglabs/benchmark-dockerfile@v1.0.0
       id: cis_dockerfile_benchmark
       with:
-        directory: './'
-        dockerfilePattern: 'dockerfile'
         disallowedPackages: 'netcat'
-        trustedBaseImages: ''
         secretPatterns: 'aws_secret,pass'
       
     # Purposely stop here
