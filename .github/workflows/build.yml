@@ -25,12 +25,25 @@ jobs:
           ref: master
           path: master
 
+    - name: Sysdig CIS Dockerfile Benchmark
+      uses: sysdiglabs/benchmark-dockerfile@v1.0.0
+      id: cis_dockerfile_benchmark
+      
     # Runs a single command using the runners shell
     - name: Run a one-line script
       run: echo Hello, world!
 
     # Purposely stop here
-    - name: Run a multi-line script
+    - name: Post Run
+      env:
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_OWNER: ${{ github.event.pull_request.head.user.login }}
       run: |
+          echo "###"
+          echo "{\"pr_name\": \"${PR_TITLE}\", \"pr_sha\": \"${PR_SHA}\", \"pr_owner\": \"${PR_OWNER}\"}" > /tmp/report.json
+          echo ${{ toJSON(steps.cis_dockerfile_benchmark.outputs.violation_report) }} > /tmp/report
+          reportString=$(sed 's/"/\\"/g' /tmp/report)
+          echo $reportString
         echo "Stop here!"
         exit 1
