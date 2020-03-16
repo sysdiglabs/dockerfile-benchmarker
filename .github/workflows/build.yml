@@ -28,6 +28,9 @@ jobs:
     - name: Sysdig CIS Dockerfile Benchmark
       uses: sysdiglabs/benchmark-dockerfile@v1.0.0
       id: cis_dockerfile_benchmark
+      with:
+        disallowedPackages: 'netcat'
+        secretPatterns: 'aws_secret,pass'
       
     # Purposely stop here
     - name: Post Run
