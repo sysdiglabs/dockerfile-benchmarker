@@ -40,10 +40,10 @@ jobs:
         PR_SHA: ${{ github.event.pull_request.head.sha }}
         PR_OWNER: ${{ github.event.pull_request.head.user.login }}
       run: |
-          echo "###"
-          echo "{\"pr_name\": \"${PR_TITLE}\", \"pr_sha\": \"${PR_SHA}\", \"pr_owner\": \"${PR_OWNER}\"}" > /tmp/report.json
-          echo ${{ toJSON(steps.cis_dockerfile_benchmark.outputs.violation_report) }} > /tmp/report
-          reportString=$(sed 's/"/\\"/g' /tmp/report)
-          echo $reportString
+        echo "###"
+        echo "{\"pr_name\": \"${PR_TITLE}\", \"pr_sha\": \"${PR_SHA}\", \"pr_owner\": \"${PR_OWNER}\"}" > /tmp/report.json
+        echo ${{ toJSON(steps.cis_dockerfile_benchmark.outputs.violation_report) }} > /tmp/report
+        reportString=$(sed 's/"/\\"/g' /tmp/report)
+        echo $reportString
         echo "Stop here!"
         exit 1
