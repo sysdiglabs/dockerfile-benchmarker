@@ -244,8 +244,8 @@ func (bm *DockerBenchmarker) CheckRunUpdateOnly() {
 
 	for file, df := range bm.dfiles {
 		// apt
-		updateIdxs := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+update`)
-		installIdx := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+install`)
+		updateIdxs := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+(-y\s)?update`)
+		installIdx := df.LookupInstructionAndContent(dockerfile.Run, `apt\s+(-y\s)?install`)
 
 		updateOnly, _ := diffArray(updateIdxs, installIdx)
 		if len(updateOnly) > 0 {
@@ -253,8 +253,8 @@ func (bm *DockerBenchmarker) CheckRunUpdateOnly() {
 		}
 
 		// apt-get
-		updateIdxs = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+update`)
-		installIdx = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+install`)
+		updateIdxs = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+(-y\s)?update`)
+		installIdx = df.LookupInstructionAndContent(dockerfile.Run, `apt-get\s+(-y\s)?install`)
 
 		updateOnly, _ = diffArray(updateIdxs, installIdx)
 		if len(updateOnly) > 0 {
@@ -262,8 +262,8 @@ func (bm *DockerBenchmarker) CheckRunUpdateOnly() {
 		}
 
 		// apk
-		updateIdxs = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+update`)
-		installIdx = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+add`)
+		updateIdxs = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+(-y\s)?update`)
+		installIdx = df.LookupInstructionAndContent(dockerfile.Run, `apk\s+(-y\s)?add`)
 
 		updateOnly, _ = diffArray(updateIdxs, installIdx)
 		if len(updateOnly) > 0 {
