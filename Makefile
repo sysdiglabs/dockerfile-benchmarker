@@ -18,3 +18,4 @@ push-image:
 	docker push ${IMG}:${VERSION}
 	docker tag ${IMG}:${VERSION} ${IMG}:latest
 	docker push ${IMG}:latest
+	
