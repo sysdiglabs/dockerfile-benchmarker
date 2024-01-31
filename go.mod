@@ -3,11 +3,10 @@ module github.com/sysdiglabs/dockerfile-benchmarker
 go 1.12
 
 require (
-	github.com/moby/buildkit v0.6.4
-	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/cobra v0.0.6
-	golang.org/x/tools v0.1.0 // indirect
-	k8s.io/apimachinery v0.17.3
+	github.com/moby/buildkit v0.12.5
+	github.com/sirupsen/logrus v1.9.0
+	github.com/spf13/cobra v1.6.1
+	k8s.io/apimachinery v0.26.2
 )
 
 replace (
